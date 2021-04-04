@@ -1,86 +1,29 @@
-version: '3'
+version: '3.7'
 
 services:
-  raw_redis:
-    image: redis:latest
-
-  redis-node-0:
-    image: docker.io/bitnami/redis-cluster:6.2-debian-10
-    container_name: redis_0
-    networks:
-      - redis
+  redis-master:
+    image: bitnami/redis:latest
+    container_name: redis_master
     ports:
-      - '7000:6379'
-    volumes:
-      - redis-cluster_data-0:/bitnami/redis/data
+      - 6380:6379
     environment:
-      - 'REDIS_PASSWORD=bitnami'
-      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2 redis-node-3'
-
-  redis-node-1:
-    image: docker.io/bitnami/redis-cluster:6.2-debian-10
-    container_name: redis_1
-    networks:
-      - redis
-    ports:
-      - '7001:6379'
+      - REDIS_REPLICATION_MODE=master
+      - ALLOW_EMPTY_PASSWORD=yes
     volumes:
-      - redis-cluster_data-1:/bitnami/redis/data
-    environment:
-      - 'REDIS_PASSWORD=bitnami'
-      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2 redis-node-3'
+      - ./data/redis:/bitnami
+      - ./data/redis/conf/redis.conf:/opt/bitnami/redis/conf/redis.conf
 
-  redis-node-2:
-    image: docker.io/bitnami/redis-cluster:6.2-debian-10
-    container_name: redis_2
-    networks:
-      - redis
-    ports:
-      - '7002:6379'
-    volumes:
-      - redis-cluster_data-2:/bitnami/redis/data
-    environment:
-      - 'REDIS_PASSWORD=bitnami'
-      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2 redis-node-3'
-
-  redis-node-3:
-    image: docker.io/bitnami/redis-cluster:6.2-debian-10
-    container_name: redis_3
-    networks:
-      - redis
-    ports:
-      - '7003:6379'
-    volumes:
-      - redis-cluster_data-3:/bitnami/redis/data
-    environment:
-      - 'REDIS_PASSWORD=bitnami'
-      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2 redis-node-3'
-
-  redis-cluster-init:
-    image: docker.io/bitnami/redis-cluster:6.2-debian-10
-    networks:
-      - redis
+  redis-replica:
+    image: bitnami/redis:latest
+    container_name: redis_replica
     depends_on:
-      - redis-node-0
-      - redis-node-1
-      - redis-node-2
-      - redis-node-3
+      - redis-master
     environment:
-      - 'REDISCLI_AUTH=bitnami'
-      - 'REDIS_CLUSTER_REPLICAS=1'
-      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2 redis-node-3'
-      - 'REDIS_CLUSTER_CREATOR=yes'
-
-volumes:
-  redis-cluster_data-0:
-    driver: local
-  redis-cluster_data-1:
-    driver: local
-  redis-cluster_data-2:
-    driver: local
-  redis-cluster_data-3:
-    driver: local
+      - REDIS_REPLICATION_MODE=slave
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - ALLOW_EMPTY_PASSWORD=yes
 
 networks:
-  local:
-    external: redis
+  redis:
+    driver: bridge

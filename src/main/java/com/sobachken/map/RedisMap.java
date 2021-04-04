@@ -1,5 +1,6 @@
-package com.sobachken;
+package com.sobachken.map;
 
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCommands;
 
 import java.util.Collection;
@@ -10,15 +11,11 @@ import java.util.stream.Collectors;
 
 public class RedisMap implements Map<String, Integer> {
 
-    private final JedisCommands jedis;
+    private final Jedis jedis;
     private final String key;
 
-    public RedisMap(JedisCommands jedis, String key) {
+    public RedisMap(Jedis jedis, String key) {
         this.jedis = jedis;
-//        Map<String, String> map = this.jedis.hgetAll(key);
-//        if (map != null) {
-//            throw new RuntimeException();
-//        }
         this.key = key;
     }
 
@@ -70,8 +67,10 @@ public class RedisMap implements Map<String, Integer> {
 
     @Override
     public void clear() {
-        Map<String, String> allValues = this.jedis.hgetAll(this.key);
-        jedis.hdel(this.key,allValues.keySet().toArray(new String[0]));
+        if (!this.isEmpty()) {
+            Map<String, String> allValues = this.jedis.hgetAll(this.key);
+            jedis.hdel(this.key, allValues.keySet().toArray(new String[0]));
+        }
     }
 
     @Override
